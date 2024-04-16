@@ -1,0 +1,28 @@
+{
+  "name": "retsjs",
+  "version": "1.0.0",
+  "description": "An express node js application that relays data via api end points whilst updating data with non intrusive operations via cron processes. Retrieves data from Real Estate Transaction Specifications qualified servers.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "setup": "node --env-file=config.env -e \"require('./Setup').initializeAllProperties([['ResidentialProperty', 'CondoProperty'], ['CommercialProperty']], 24)\"",
+    "update": "node --env-file=config.env -e \"require('./Update').updatePropertyTypeMain(['ResidentialProperty', 'CondoProperty', 'CommercialProperty'], 6)\"",
+    "delete": "node --env-file=config.env -e \"require('./Delete').deletePropertyTypeMain(['ResidentialProperty', 'CondoProperty', 'CommercialProperty'])\""
+  },
+  "keywords": [
+    "RETS"
+  ],
+  "author": "Kushal Ghimire for Homebaba.ca",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.3",
+    "get-lat-long-queue": "^1.0.0",
+    "nodemon": "^3.0.3",
+    "redis": "^4.6.13",
+    "sax": "^1.3.0",
+    "sqlite3": "^5.1.7"
+  }
+}

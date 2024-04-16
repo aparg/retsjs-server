@@ -1,0 +1,42 @@
+#Ignore mac files
+.DS_store
+
+# Ignore config file
+config.env
+
+# Ignore node modules
+node_modules/
+package-lock.json
+
+# Ignore commercial data
+Data/Commercial/Photos/*
+Data/Commercial/commercialDatabase.db
+Data/Commercial/CommercialPropertyUpdates.xml
+Data/Commercial/initialCommercialProperty.xml
+Data/Commercial/allActiveCommercialProperty.xml
+
+
+# Ignore residential data
+Data/ResidentialAndCondos/Photos/*
+Data/ResidentialAndCondos/initialCondoProperty.xml
+Data/ResidentialAndCondos/initialResidentialProperty.xml
+Data/ResidentialAndCondos/residentialAndCondosDatabase.db
+Data/ResidentialAndCondos/ResidentialPropertyUpdates.xml
+Data/ResidentialAndCondos/CondoPropertyUpdates.xml
+Data/ResidentialAndCondos/allActiveResidentialProperty.xml
+Data/ResidentialAndCondos/allActiveCondoProperty.xml
+
+# Ignore after set up database schema files
+Setup/DatabaseSchemas/commercialPropertiesTable.js
+Setup/DatabaseSchemas/residentialAndCondoTable.js
+
+# Ignore after set up object schema files
+Setup/ObjectSchemas/commercialPropertySchema.js
+Setup/ObjectSchemas/residentialAndCondoPropertySchema.js
+
+# Ignore fields xml file retrieved while setup
+Setup/PropertyTypeMetadata/*
+
+# Log file
+updateLogfile.log
+deleteLogfile.log
