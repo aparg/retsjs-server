@@ -53,6 +53,7 @@ const getPropertyFieldsMetadata = async (propertyType) => {
             },
             headers: headers,
         });
+	console.log(response)
         createConsoleLog(__filename, `Retrieved available fields for property type: ${propertyType}`)
 
         return { message: 'Successfully retrieved residential metadata', data: response.data };

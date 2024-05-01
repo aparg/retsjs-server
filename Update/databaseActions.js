@@ -61,7 +61,7 @@ const updateListingPrice = async (property, databasePath, tableName) => {
         createConsoleLog(__filename, `list price changed from ${oldPropertyValue.ListPrice} to ${property.ListPrice}.`);
 
         // Update PriceTracker array with current ListPrice and TimestampSql
-        const newPriceEntry = [property.ListPrice, property.TimestampSql];
+        const newPriceEntry = [JSON.stringify(property.ListPrice), JSON.stringify(property.TimestampSql)];
         property.PriceTracker.push(JSON.stringify(newPriceEntry));
 
         // Check if ListPrice is lower or equal to MinListPrice
