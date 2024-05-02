@@ -62,15 +62,15 @@ const updateListingPrice = async (property, databasePath, tableName) => {
 
         // Update PriceTracker array with current ListPrice and TimestampSql
         const newPriceEntry = [JSON.stringify(property.ListPrice), JSON.stringify(property.TimestampSql)];
-        property.PriceTracker.push(JSON.stringify(newPriceEntry));
+	property.PriceTracker.push(JSON.stringify(newPriceEntry));
 
         // Check if ListPrice is lower or equal to MinListPrice
-        if (property.ListPrice <= oldPropertyValue.MinListPrice) {
+	if (parseFloat(property.ListPrice) <= parseFloat(oldPropertyValue.MinListPrice)) {
             createConsoleLog(__filename, `list price decreased:Assigning ListPrice ${property.ListPrice} to MinListPrice.`);
             property.MinListPrice = property.ListPrice;
         }
         // Check if ListPrice is equal or higher than MaxListPrice
-        if (property.ListPrice >= oldPropertyValue.MaxListPrice) {
+        if (parseFloat(property.ListPrice) >= parseFloat(oldPropertyValue.MaxListPrice)) {
             createConsoleLog(__filename, `list price increased:Assigning ListPrice ${property.ListPrice} to MinListPrice.`);
             property.MaxListPrice = property.ListPrice;
         }
