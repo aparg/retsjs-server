@@ -2,8 +2,8 @@ const handleOptionalParameters = (req, res, next) => {
   const tableName = req.tableName;
   const { $limit, $skip, $select, $range, $selectOr } = req.query;
 
-  const limit = parseInt($limit) || 10; 
-  const skip = parseInt($skip) || 0; 
+  const limit = parseInt($limit) || 10;
+  const skip = parseInt($skip) || 0;
 
   const selectFields = parseSelectParameters($select);
   const rangeFields = parseRangeParameters($range);
@@ -14,7 +14,7 @@ const handleOptionalParameters = (req, res, next) => {
     skip,
     selectFields,
     rangeFields,
-    selectOrFields, 
+    selectOrFields,
     tableName,
   });
 
@@ -23,16 +23,27 @@ const handleOptionalParameters = (req, res, next) => {
   next();
 };
 
-const buildDatabaseQuery = ({ limit, skip, selectFields, rangeFields, selectOrFields, tableName }) => {
+const buildDatabaseQuery = ({
+  limit,
+  skip,
+  selectFields,
+  rangeFields,
+  selectOrFields,
+  tableName,
+}) => {
   const query = `SELECT * FROM ${tableName}`;
   const conditions = [];
 
   addSelectConditions(conditions, selectFields);
   addSelectOrConditions(conditions, selectOrFields); // Add conditions for $selectOr
   addRangeConditions(conditions, rangeFields);
-
+  console.log(
+    `${query} WHERE ${conditions.join(" AND ")} ORDER BY TimestampSql DESC`
+  );
   return addLimitOffset(
-    conditions.length ? `${query} WHERE ${conditions.join(" AND ")} ORDER BY TimestampSql DESC` : `${query} ORDER BY TimestampSql DESC`,
+    conditions.length
+      ? `${query} WHERE ${conditions.join(" AND ")} ORDER BY TimestampSql DESC`
+      : `${query} ORDER BY TimestampSql DESC`,
     limit,
     skip
   );
@@ -40,7 +51,7 @@ const buildDatabaseQuery = ({ limit, skip, selectFields, rangeFields, selectOrFi
 
 const addSelectOrConditions = (conditions, selectOrFields) => {
   if (selectOrFields.length > 0) {
-    const selectOrConditions = selectOrFields.map(field => {
+    const selectOrConditions = selectOrFields.map((field) => {
       const [fieldName, value] = field.split("=");
       return getConditionString(fieldName, value);
     });
@@ -51,6 +62,7 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
 const addSelectConditions = (conditions, selectFields) => {
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
+    console.log(fieldName, value);
     const condition = getConditionString(fieldName, value);
     conditions.push(condition);
   });
@@ -83,6 +95,9 @@ const addRangeConditions = (conditions, rangeFields) => {
 };
 
 const getConditionString = (fieldName, value) => {
+  if (fieldName === "PriceDecreased" && value === "true") {
+    return `CAST(MinListPrice AS REAL) = CAST(ListPrice AS REAL) AND CAST(MinListPrice AS REAL) < CAST(MaxListPrice AS REAL)`;
+  }
   if (value === "true" || value === "false") {
     return `${fieldName} = ${value}`;
   }
