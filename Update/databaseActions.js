@@ -108,6 +108,9 @@ const updateListingPrice = async (property, databasePath, tableName) => {
     } else {
       property.MaxListPrice = oldPropertyValue.MaxListPrice;
     }
+  } else {
+    property.MinListPrice = oldPropertyValue.MinListPrice;
+    property.MaxListPrice = oldPropertyValue.MaxListPrice;
   }
   return property;
 };
