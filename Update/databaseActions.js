@@ -91,6 +91,8 @@ const updateListingPrice = async (property, databasePath, tableName) => {
         `list price decreased:Assigning ListPrice ${property.ListPrice} to MinListPrice.`
       );
       property.MinListPrice = property.ListPrice;
+    } else {
+      property.MinListPrice = oldPropertyValue.MinListPrice;
     }
     // Check if ListPrice is equal or higher than MaxListPrice
     if (
@@ -103,6 +105,8 @@ const updateListingPrice = async (property, databasePath, tableName) => {
         `list price increased:Assigning ListPrice ${property.ListPrice} to MaxListPrice.`
       );
       property.MaxListPrice = property.ListPrice;
+    } else {
+      property.MaxListPrice = oldPropertyValue.MaxListPrice;
     }
   }
   return property;
