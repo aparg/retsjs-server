@@ -162,6 +162,10 @@ const updatePropertyWithImagesFunction = async (
     databasePath,
     tableName
   );
+  createConsoleLog(
+    __filename,
+    `MinListPrice for new property is ${MinListPrice} and MaxListPrice is ${MaxListPrice}`
+  );
   const sortedPhotoLink = generateSortedPhotoLink(imageNamesArray);
   property.PhotoLink = JSON.stringify(sortedPhotoLink);
   const keys = Object.keys(property);
