@@ -115,7 +115,7 @@ const createPropertyFunction = (
 ) => {
   createConsoleLog(
     __filename,
-    `Assigned ${ListPrice} to MinListPrice and MaxListPrice`
+    `Assigned ${property.ListPrice} to MinListPrice and MaxListPrice`
   );
   property.MinListPrice = property.ListPrice;
   property.MaxListPrice = property.ListPrice;
