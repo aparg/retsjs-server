@@ -158,17 +158,13 @@ const createPropertyFunction = (
 
 // Generates sql query when an existing property has images updated.
 const updatePropertyWithImagesFunction = async (
-  oldProperty,
+  property,
   imageNamesArray,
   databasePath,
   tableName,
   clauseCollection
 ) => {
-  const property = await updateListingPrice(
-    oldProperty,
-    databasePath,
-    tableName
-  );
+  await updateListingPrice(property, databasePath, tableName);
   createConsoleLog(
     __filename,
     `MinListPrice for new property is ${property.MinListPrice} and MaxListPrice is ${property.MaxListPrice}`
@@ -196,16 +192,12 @@ const updatePropertyWithImagesFunction = async (
 
 // Generates sql query when an existing property has updates but images remain the same.
 const updatePropertyFunction = async (
-  oldProperty,
+  property,
   databasePath,
   tableName,
   clauseCollection
 ) => {
-  const property = await updateListingPrice(
-    oldProperty,
-    databasePath,
-    tableName
-  );
+  await updateListingPrice(property, databasePath, tableName);
   // Filter out keys you don't want to update
   const keysToUpdate = Object.keys(property).filter(
     (key) => key !== "PhotoCount" && key !== "PhotoLink"
@@ -250,6 +242,7 @@ const executeSqlQuery = async (clauseCollection, databasePath) => {
 
     // Execute each SQL statement in the clauseCollection array
     for (const query of clauseCollection) {
+      console.log(query.sql, query.params);
       await new Promise((resolve, reject) => {
         db.run(query.sql, query.params, function (err) {
           if (err) {
