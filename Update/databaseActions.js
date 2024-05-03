@@ -68,7 +68,7 @@ const updateListingPrice = async (property, databasePath, tableName) => {
   if (oldPropertyValue.ListPrice !== property.ListPrice) {
     createConsoleLog(
       __filename,
-      `list price changed from ${oldPropertyValue.ListPrice} to ${property.ListPrice}.`
+      `list price changed from ${oldPropertyValue.ListPrice} to ${property.ListPrice} for ${property.MLS}.`
     );
 
     createConsoleLog(
