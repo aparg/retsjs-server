@@ -112,7 +112,7 @@ const updateListingPrice = async (property, databasePath, tableName) => {
     property.MinListPrice = oldPropertyValue.MinListPrice;
     property.MaxListPrice = oldPropertyValue.MaxListPrice;
   }
-  return property;
+  return;
 };
 
 // Generates sql query for creating a new listing.
@@ -178,7 +178,7 @@ const updatePropertyWithImagesFunction = async (
   const updateStatement = `UPDATE ${tableName} SET ${setClause} WHERE MLS = ?`;
   clauseCollection.push({
     sql: updateStatement,
-    params: [values, property.MLS],
+    params: [...values, property.MLS],
   });
 
   createConsoleLog(
@@ -241,8 +241,8 @@ const executeSqlQuery = async (clauseCollection, databasePath) => {
 
     // Execute each SQL statement in the clauseCollection array
     for (const query of clauseCollection) {
-      console.log("SQL QUERIES PERFORMED FOR UPDATE");
-      console.log(query.sql, query.params);
+      // console.log("SQL QUERIES PERFORMED FOR UPDATE");
+      // console.log(query.sql, query.params);
       await new Promise((resolve, reject) => {
         db.run(query.sql, query.params, function (err) {
           if (err) {

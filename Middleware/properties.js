@@ -62,7 +62,7 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
 const addSelectConditions = (conditions, selectFields) => {
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
-    console.log(fieldName, value);
+    // console.log(fieldName, value);
     const condition = getConditionString(fieldName, value);
     conditions.push(condition);
   });
