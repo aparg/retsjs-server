@@ -176,7 +176,6 @@ const updatePropertyWithImagesFunction = async (
   const values = Object.values(property);
 
   const updateStatement = `UPDATE ${tableName} SET ${setClause} WHERE MLS = ?`;
-  createConsoleLog(__filename, `Update statement is ${updateStatement}`);
   clauseCollection.push({
     sql: updateStatement,
     params: [values, property.MLS],
@@ -242,6 +241,7 @@ const executeSqlQuery = async (clauseCollection, databasePath) => {
 
     // Execute each SQL statement in the clauseCollection array
     for (const query of clauseCollection) {
+      console.log("SQL QUERIES PERFORMED FOR UPDATE");
       console.log(query.sql, query.params);
       await new Promise((resolve, reject) => {
         db.run(query.sql, query.params, function (err) {
@@ -283,7 +283,6 @@ const executeSqlQuery = async (clauseCollection, databasePath) => {
   } finally {
     // Close the database connection when done
     db.close();
-
     let endTime = new Date().getTime();
     const durationInSeconds = (endTime - startTime) / 1000;
     createConsoleLog(__filename, `Total time for update ${durationInSeconds}`);
