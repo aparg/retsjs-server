@@ -180,7 +180,7 @@ const updatePropertyWithImagesFunction = async (
   const values = Object.values(property);
 
   const updateStatement = `UPDATE ${tableName} SET ${setClause} WHERE MLS = ?`;
-
+  createConsoleLog(__filename, `Update statement is ${updateStatement}`);
   clauseCollection.push({
     sql: updateStatement,
     params: [values, property.MLS],
