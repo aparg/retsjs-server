@@ -113,6 +113,10 @@ const createPropertyFunction = (
   tableName,
   clauseCollection
 ) => {
+  createConsoleLog(
+    __filename,
+    `Assigned ${ListPrice} to MinListPrice and MaxListPrice`
+  );
   property.MinListPrice = property.ListPrice;
   property.MaxListPrice = property.ListPrice;
 
