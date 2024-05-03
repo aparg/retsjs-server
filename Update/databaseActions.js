@@ -105,7 +105,7 @@ const updateListingPrice = async (property, databasePath, tableName) => {
       property.MaxListPrice = property.ListPrice;
     }
   }
-  return;
+  return property;
 };
 
 // Generates sql query for creating a new listing.
@@ -151,13 +151,17 @@ const createPropertyFunction = (
 
 // Generates sql query when an existing property has images updated.
 const updatePropertyWithImagesFunction = async (
-  property,
+  oldProperty,
   imageNamesArray,
   databasePath,
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, databasePath, tableName);
+  const property = await updateListingPrice(
+    oldProperty,
+    databasePath,
+    tableName
+  );
   const sortedPhotoLink = generateSortedPhotoLink(imageNamesArray);
   property.PhotoLink = JSON.stringify(sortedPhotoLink);
   const keys = Object.keys(property);
@@ -181,17 +185,20 @@ const updatePropertyWithImagesFunction = async (
 
 // Generates sql query when an existing property has updates but images remain the same.
 const updatePropertyFunction = async (
-  property,
+  oldProperty,
   databasePath,
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, databasePath, tableName);
+  const property = await updateListingPrice(
+    oldProperty,
+    databasePath,
+    tableName
+  );
   // Filter out keys you don't want to update
   const keysToUpdate = Object.keys(property).filter(
     (key) => key !== "PhotoCount" && key !== "PhotoLink"
   );
-
   // Construct set clause without keys 'PhotoCount' and 'PhotoLink'
   const setClause = keysToUpdate.map((key) => `${key} = ?`).join(", ");
 
