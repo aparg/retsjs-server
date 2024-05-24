@@ -78,6 +78,10 @@ const updateListingPrice = async (property, databasePath, tableName) => {
 
     // Update PriceTracker array with current ListPrice and TimestampSql
     const newPriceEntry = [`${property.ListPrice}`, `${property.TimestampSql}`];
+    createConsoleLog(
+      __filename,
+      `The bew pricetracker array is ${newPriceEntry}`
+    );
     property.PriceTracker.push(JSON.stringify(newPriceEntry));
 
     // Check if ListPrice is lower or equal to MinListPrice
