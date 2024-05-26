@@ -155,11 +155,14 @@ const updatePriceTracker = async (
     ChangeTrack JSON
   );`
   );
-  const tableCreation =
-    await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
+  const checkTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
     ChangeTrack JSON
-  );`);
+  );`;
+  clauseCollection.push({
+    sql: checkTableQuery,
+    params: [],
+  });
   createConsoleLog(
     __filename,
     `result for creating table in database: ${tableCreation}`
@@ -225,7 +228,7 @@ const updatePriceTracker = async (
 };
 
 // Generates sql query for creating a new listing.
-const createPropertyFunction = (
+const createPropertyFunction = async (
   property,
   databasePath,
   imageNamesArray,
@@ -252,7 +255,7 @@ const createPropertyFunction = (
     ", "
   )}) VALUES (${placeholders})`;
 
-  updatePriceTracker(
+  await updatePriceTracker(
     property,
     databasePath,
     clauseCollection,
