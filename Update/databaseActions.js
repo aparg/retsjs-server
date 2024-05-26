@@ -182,7 +182,7 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
     const values = Object.values(dbValues);
     const updatePriceTrackerQuery = `INSERT INTO ${tableName}(${Object.keys(
       dbValues
-    ).join(", ")}) VALUES(${dbValues.map(() => "?")}), WHERE MLS="?"`;
+    ).join(", ")}) VALUES(${values.map(() => "?")}), WHERE MLS="?"`;
 
     createConsoleLog(
       __filename,
