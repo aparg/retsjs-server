@@ -198,6 +198,7 @@ const updatePriceTracker = async (
         ChangeTrack: JSON.stringify(priceTrackerArray),
       };
       const values = Object.values(dbValues);
+      createConsoleLog(__filename, `value to be inserted will be ${values[0]}`);
       const updatePriceTrackerQuery = `INSERT INTO ${tableName} VALUES(${dbValues.map(
         () => "?"
       )}), WHERE MLS="?"`;
