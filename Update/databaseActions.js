@@ -173,7 +173,7 @@ const updatePriceTracker = async (
   );
   if (row) {
     //the row required to update is extracted
-    let priceTrackerArray = JSON.parse(row.PriceTracker);
+    let priceTrackerArray = JSON.parse(row.ChangeTrack);
     // if the row has no value, we have to assign an empty array to it
     if (!priceTrackerArray) priceTrackerArray = [];
     //check if the last object pushed has the same price, if so we dont need to update the array else, we will update the array
