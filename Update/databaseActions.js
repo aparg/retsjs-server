@@ -140,6 +140,7 @@ const updatePriceTracker = async (
   clauseCollection,
   price
 ) => {
+  const tableName = "PriceTracker";
   createConsoleLog(
     __filename,
     `fix: the query will be CREATE TABLE IF NOT EXISTS ${tableName}(
@@ -147,7 +148,6 @@ const updatePriceTracker = async (
     ChangeTrack JSON
   );`
   );
-  const tableName = "PriceTracker";
   const dbPath = path.resolve(__dirname, databasePath);
   createConsoleLog(
     __filename,
