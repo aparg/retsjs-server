@@ -61,6 +61,7 @@ const assignSearchAddress = (property) => {
 // Function that checks the listing price value for the specified property with a MLS id value and tracks changes.
 const updateListingPrice = async (
   property,
+  databasePath,
   clauseCollection,
   databasePath,
   tableName
@@ -70,7 +71,12 @@ const updateListingPrice = async (
     databasePath,
     tableName
   );
-  updatePriceTracker(property, clauseCollection, property.ListPrice);
+  await updatePriceTracker(
+    property,
+    databasePath,
+    clauseCollection,
+    property.ListPrice
+  );
   if (oldPropertyValue.ListPrice !== property.ListPrice) {
     createConsoleLog(
       __filename,
@@ -129,7 +135,12 @@ const updateListingPrice = async (
   return;
 };
 
-const updatePriceTracker = async (property, clauseCollection, price) => {
+const updatePriceTracker = async (
+  property,
+  databasePath,
+  clauseCollection,
+  price
+) => {
   const tableName = "PriceTracker";
   const dbPath = path.resolve(__dirname, databasePath);
   const db = new sqlite3.Database(dbPath);
@@ -195,11 +206,13 @@ const updatePriceTracker = async (property, clauseCollection, price) => {
       `new mls added in pracetracker db with mls ${property.MLS}`
     );
   }
+  return;
 };
 
 // Generates sql query for creating a new listing.
 const createPropertyFunction = (
   property,
+  databasePath,
   imageNamesArray,
   tableName,
   clauseCollection
@@ -224,7 +237,12 @@ const createPropertyFunction = (
     ", "
   )}) VALUES (${placeholders})`;
 
-  updatePriceTracker(property, clauseCollection, property.ListPrice);
+  updatePriceTracker(
+    property,
+    databasePath,
+    clauseCollection,
+    property.ListPrice
+  );
 
   clauseCollection.push({
     sql: insertStatement,
@@ -247,7 +265,13 @@ const updatePropertyWithImagesFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, clauseCollection, databasePath, tableName);
+  await updateListingPrice(
+    property,
+    databasePath,
+    clauseCollection,
+    databasePath,
+    tableName
+  );
   createConsoleLog(
     __filename,
     `MinListPrice for new property is ${property.MinListPrice} and MaxListPrice is ${property.MaxListPrice}`
@@ -279,7 +303,13 @@ const updatePropertyFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, clauseCollection, databasePath, tableName);
+  await updateListingPrice(
+    property,
+    databasePath,
+    clauseCollection,
+    databasePath,
+    tableName
+  );
   // Filter out keys you don't want to update
   const keysToUpdate = Object.keys(property).filter(
     (key) => key !== "PhotoCount" && key !== "PhotoLink"
