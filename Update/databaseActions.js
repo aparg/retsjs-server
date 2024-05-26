@@ -59,12 +59,18 @@ const assignSearchAddress = (property) => {
 };
 
 // Function that checks the listing price value for the specified property with a MLS id value and tracks changes.
-const updateListingPrice = async (property, databasePath, tableName) => {
+const updateListingPrice = async (
+  property,
+  clauseCollection,
+  databasePath,
+  tableName
+) => {
   let oldPropertyValue = await checkIfPropertyExists(
     property.MLS,
     databasePath,
     tableName
   );
+  updatePriceTracker(property, clauseCollection, property.ListPrice);
   if (oldPropertyValue.ListPrice !== property.ListPrice) {
     createConsoleLog(
       __filename,
@@ -80,10 +86,14 @@ const updateListingPrice = async (property, databasePath, tableName) => {
     const newPriceEntry = [`${property.ListPrice}`, `${property.TimestampSql}`];
     createConsoleLog(
       __filename,
-      `The bew pricetracker array is ${newPriceEntry}`
+      `The new pricetracker array is ${newPriceEntry}`
     );
-    property.PriceTracker.push(JSON.stringify(newPriceEntry));
-
+    if (typeof property.PriceTracker !== "object" || !property.PriceTracker) {
+      property.PriceTracker = JSON.stringify([]);
+    }
+    const priceTrackerValue = JSON.parse(property.PriceTracker);
+    priceTrackerValue.push(JSON.stringify(newPriceEntry));
+    property.PriceTracker = JSON.stringify(priceTrackerValue);
     // Check if ListPrice is lower or equal to MinListPrice
     if (
       parseFloat(property.ListPrice) <=
@@ -119,6 +129,74 @@ const updateListingPrice = async (property, databasePath, tableName) => {
   return;
 };
 
+const updatePriceTracker = async (property, clauseCollection, price) => {
+  const tableName = "PriceTracker";
+  const dbPath = path.resolve(__dirname, databasePath);
+  const db = new sqlite3.Database(dbPath);
+  const dbGetAsync = util.promisify(db.get).bind(db);
+  await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
+    MLS TEXT PRIMARY KEY,
+    priceTracker JSON
+  )`);
+  const row = await dbGetAsync(
+    `SELECT ChangeTrack from ${tableName} WHERE MLS=${property.MLS}`
+  );
+  createConsoleLog(
+    __filename,
+    `row value: returned row value for pricetracker array is ${row}`
+  );
+  if (row) {
+    //the row required to update is extracted
+    let priceTrackerArray = JSON.parse(row.PriceTracker);
+    // if the row has no value, we have to assign an empty array to it
+    if (!priceTrackerArray) priceTrackerArray = [];
+    //check if the last object pushed has the same price, if so we dont need to update the array else, we will update the array
+    //Also if the array is empty, we need to update the array with a new object with the latest price
+    if (
+      priceTrackerArray?.at(-1)?.price !== price ||
+      priceTrackerArray.length === 0
+    ) {
+      //create an object with date and price
+      const trackingValue = {
+        date: property.TimestampSql,
+        price,
+      };
+      createConsoleLog(
+        __filename,
+        `pushing ${trackingValue} to pricetracker array`
+      );
+      //push it to the array
+      priceTrackerArray.push(trackingValue);
+      //object for creating a query
+      const dbValues = {
+        ChangeTrack: JSON.stringify(priceTrackerArray),
+      };
+      const values = Object.values(dbValues);
+      const updatePriceTrackerQuery = `INSERT INTO ${tableName} VALUES(${dbValues.map(
+        () => "?"
+      )}), WHERE MLS="?"`;
+      clauseCollection.push({
+        sql: updatePriceTrackerQuery,
+        params: [...values, property.MLS],
+      });
+    }
+  } else {
+    const updatePriceTrackerQuery = `INSERT INTO ${tableName}(MLS, ChangeTrack) VALUES(?,?)`;
+    const trackingValue = {
+      date: property.TimestampSql,
+    };
+
+    clauseCollection.push({
+      sql: updatePriceTrackerQuery,
+      params: [property.MLS, trackingValue],
+    });
+    createConsoleLog(
+      __filename,
+      `new mls added in pracetracker db with mls ${property.MLS}`
+    );
+  }
+};
+
 // Generates sql query for creating a new listing.
 const createPropertyFunction = (
   property,
@@ -142,10 +220,11 @@ const createPropertyFunction = (
   }
   const keys = Object.keys(property);
   const placeholders = keys.map(() => "?").join(", ");
-
   const insertStatement = `INSERT INTO ${tableName} (${keys.join(
     ", "
   )}) VALUES (${placeholders})`;
+
+  updatePriceTracker(property, clauseCollection, property.ListPrice);
 
   clauseCollection.push({
     sql: insertStatement,
@@ -168,7 +247,7 @@ const updatePropertyWithImagesFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, databasePath, tableName);
+  await updateListingPrice(property, clauseCollection, databasePath, tableName);
   createConsoleLog(
     __filename,
     `MinListPrice for new property is ${property.MinListPrice} and MaxListPrice is ${property.MaxListPrice}`
@@ -200,7 +279,7 @@ const updatePropertyFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(property, databasePath, tableName);
+  await updateListingPrice(property, clauseCollection, databasePath, tableName);
   // Filter out keys you don't want to update
   const keysToUpdate = Object.keys(property).filter(
     (key) => key !== "PhotoCount" && key !== "PhotoLink"
