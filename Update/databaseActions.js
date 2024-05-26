@@ -157,7 +157,7 @@ const updatePriceTracker = async (
   const dbGetAsync = util.promisify(db.get).bind(db);
   const tableCreation = await db.run(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
-    ChangeTrack JSON
+    ChangeTrack TEXT
   );`);
   createConsoleLog(
     __filename,
@@ -195,7 +195,7 @@ const updatePriceTracker = async (
       priceTrackerArray.push(JSON.stringify(trackingValue));
       //object for creating a query
       const dbValues = {
-        ChangeTrack: priceTrackerArray,
+        ChangeTrack: JSON.stringify(priceTrackerArray),
       };
       const values = Object.values(dbValues);
       const updatePriceTrackerQuery = `INSERT INTO ${tableName} VALUES(${dbValues.map(
