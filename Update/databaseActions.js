@@ -264,13 +264,7 @@ const updatePropertyWithImagesFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(
-    property,
-    databasePath,
-    clauseCollection,
-    databasePath,
-    tableName
-  );
+  await updateListingPrice(property, databasePath, clauseCollection, tableName);
   createConsoleLog(
     __filename,
     `MinListPrice for new property is ${property.MinListPrice} and MaxListPrice is ${property.MaxListPrice}`
