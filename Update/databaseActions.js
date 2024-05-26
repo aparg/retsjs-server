@@ -296,13 +296,7 @@ const updatePropertyFunction = async (
   tableName,
   clauseCollection
 ) => {
-  await updateListingPrice(
-    property,
-    databasePath,
-    clauseCollection,
-    databasePath,
-    tableName
-  );
+  await updateListingPrice(property, databasePath, clauseCollection, tableName);
   // Filter out keys you don't want to update
   const keysToUpdate = Object.keys(property).filter(
     (key) => key !== "PhotoCount" && key !== "PhotoLink"
