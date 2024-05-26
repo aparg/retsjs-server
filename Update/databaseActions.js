@@ -140,6 +140,13 @@ const updatePriceTracker = async (
   clauseCollection,
   price
 ) => {
+  createConsoleLog(
+    __filename,
+    `fix: the query will be CREATE TABLE IF NOT EXISTS ${tableName}(
+    MLS TEXT PRIMARY KEY,
+    ChangeTrack JSON
+  );`
+  );
   const tableName = "PriceTracker";
   const dbPath = path.resolve(__dirname, databasePath);
   createConsoleLog(
@@ -148,25 +155,14 @@ const updatePriceTracker = async (
   );
   const db = new sqlite3.Database(dbPath);
   const dbGetAsync = util.promisify(db.get).bind(db);
+  const tableCreation = await db.run(`CREATE TABLE IF NOT EXISTS ${tableName}(
+    MLS TEXT PRIMARY KEY,
+    ChangeTrack JSON
+  );`);
   createConsoleLog(
     __filename,
-    `fix: the query will be CREATE TABLE IF NOT EXISTS ${tableName}(
-    MLS TEXT PRIMARY KEY,
-    ChangeTrack JSON
-  );`
+    `result for creating table in database: ${tableCreation}`
   );
-  const checkTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName}(
-    MLS TEXT PRIMARY KEY,
-    ChangeTrack JSON
-  );`;
-  clauseCollection.push({
-    sql: checkTableQuery,
-    params: [],
-  });
-  // createConsoleLog(
-  //   __filename,
-  //   `result for creating table in database: ${tableCreation}`
-  // );
   const row = await dbGetAsync(
     `SELECT ChangeTrack from ${tableName} WHERE MLS=${property.MLS}`
   );
