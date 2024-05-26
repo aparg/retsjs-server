@@ -201,10 +201,10 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
       date: property.TimestampSql,
       price: property.ListPrice,
     };
-
+    const values = Object.values(trackingValue);
     clauseCollection.push({
       sql: updatePriceTrackerQuery,
-      params: [...trackingValue],
+      params: [...values],
     });
     createConsoleLog(
       __filename,
