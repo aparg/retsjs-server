@@ -148,7 +148,7 @@ const updatePriceTracker = async (
     await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
     ChangeTrack JSON
-  )`);
+  );`);
   createConsoleLog(
     __filename,
     `result for creating table in database: ${tableCreation}`
