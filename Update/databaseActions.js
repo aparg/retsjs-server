@@ -144,10 +144,15 @@ const updatePriceTracker = async (
   const dbPath = path.resolve(__dirname, databasePath);
   const db = new sqlite3.Database(dbPath);
   const dbGetAsync = util.promisify(db.get).bind(db);
-  await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
+  const tableCreation =
+    await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
     ChangeTrack JSON
   )`);
+  createConsoleLog(
+    __filename,
+    `result for creating table in database: ${tableCreation}`
+  );
   const row = await dbGetAsync(
     `SELECT ChangeTrack from ${tableName} WHERE MLS=${property.MLS}`
   );
