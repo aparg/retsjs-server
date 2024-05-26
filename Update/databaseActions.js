@@ -164,7 +164,7 @@ const updatePriceTracker = async (
     `result for creating table in database: ${tableCreation}`
   );
   const row = await dbGetAsync(
-    `SELECT ChangeTrack from ${tableName} WHERE MLS=${property.MLS}`
+    `SELECT ChangeTrack from ${tableName} WHERE MLS="${property.MLS}"`
   );
   createConsoleLog(
     __filename,
