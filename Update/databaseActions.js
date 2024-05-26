@@ -134,20 +134,8 @@ const updateListingPrice = async (
   return;
 };
 
-const updatePriceTracker = async (
-  property,
-  databasePath,
-  clauseCollection,
-  price
-) => {
+const updatePriceTracker = async (property, databasePath, clauseCollection) => {
   const tableName = "PriceTracker";
-  createConsoleLog(
-    __filename,
-    `fix: the query will be CREATE TABLE IF NOT EXISTS ${tableName}(
-    MLS TEXT PRIMARY KEY,
-    ChangeTrack JSON
-  );`
-  );
   const dbPath = path.resolve(__dirname, databasePath);
   createConsoleLog(
     __filename,
@@ -157,65 +145,67 @@ const updatePriceTracker = async (
   const dbGetAsync = util.promisify(db.get).bind(db);
   const tableCreation = await db.run(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
-    ChangeTrack TEXT
+    date TEXT,
+    price TEXT
   );`);
   createConsoleLog(
     __filename,
     `result for creating table in database: ${tableCreation}`
   );
   const row = await dbGetAsync(
-    `SELECT ChangeTrack from ${tableName} WHERE MLS=?`,
+    `SELECT date, price from ${tableName} WHERE MLS=?`,
     property.MLS
   );
-  createConsoleLog(
-    __filename,
-    `row value: returned row value for pricetracker array is ${row}`
-  );
   if (row) {
+    //this means the property's price had already started
     //the row required to update is extracted
-    let priceTrackerArray = JSON.parse(row.ChangeTrack);
-    // if the row has no value, we have to assign an empty array to it
-    if (!priceTrackerArray) priceTrackerArray = [];
-    //check if the last object pushed has the same price, if so we dont need to update the array else, we will update the array
-    //Also if the array is empty, we need to update the array with a new object with the latest price
-    if (
-      priceTrackerArray?.at(-1)?.price !== price ||
-      priceTrackerArray.length === 0
-    ) {
-      //create an object with date and price
-      const trackingValue = {
-        date: property.TimestampSql,
-        price,
-      };
-      createConsoleLog(
-        __filename,
-        `pushing ${trackingValue} to pricetracker array`
-      );
-      //push it to the array
-      priceTrackerArray.push(JSON.stringify(trackingValue));
-      //object for creating a query
-      const dbValues = {
-        ChangeTrack: JSON.stringify(priceTrackerArray),
-      };
-      const values = Object.values(dbValues);
-      createConsoleLog(__filename, `value to be inserted will be ${values[0]}`);
-      const updatePriceTrackerQuery = `INSERT INTO ${tableName} VALUES(${dbValues.map(
-        () => "?"
-      )}), WHERE MLS="?"`;
-      clauseCollection.push({
-        sql: updatePriceTrackerQuery,
-        params: [...values, property.MLS],
-      });
-    }
+    //we use comma separated values for date and price
+    let dateArray = [];
+    row.date && dateArray.push(row.date);
+    property.TimestampSql
+      ? dateArray.push(property.TimestampSql)
+      : dateArray.push("");
+    let date = dateArray.join(", ");
+
+    let priceArray = [];
+    row.price && priceArray.push(row.price);
+    property.ListPrice
+      ? priceArray.push(property.ListPrice)
+      : priceArray.push("");
+    let price = priceArray.join(", ");
+
+    const dbValues = {
+      date,
+      price,
+    };
+
+    const values = Object.values(dbValues);
+    const updatePriceTrackerQuery = `INSERT INTO ${tableName}(${Object.keys(
+      dbValues
+    ).join(", ")}) VALUES(${dbValues.map(() => "?")}), WHERE MLS="?"`;
+
+    createConsoleLog(
+      __filename,
+      `pricetracker query is ${updatePriceTrackerQuery}`
+    );
+
+    clauseCollection.push({
+      sql: updatePriceTrackerQuery,
+      params: [...values, property.MLS],
+    });
+    createConsoleLog(__filename, `p`);
   } else {
-    const updatePriceTrackerQuery = `INSERT INTO ${tableName}(MLS, ChangeTrack) VALUES(?,?)`;
+    //if the property does not exist in the tracking table
+    const updatePriceTrackerQuery = `INSERT INTO ${tableName}(MLS, date, price) VALUES(?,?,?)`;
     const trackingValue = {
+      MLS: property.MLS,
       date: property.TimestampSql,
+      price: property.ListPrice,
     };
 
     clauseCollection.push({
       sql: updatePriceTrackerQuery,
-      params: [property.MLS, trackingValue],
+      params: [...trackingValue],
     });
     createConsoleLog(
       __filename,
