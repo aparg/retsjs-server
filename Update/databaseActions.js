@@ -63,7 +63,6 @@ const updateListingPrice = async (
   property,
   databasePath,
   clauseCollection,
-  databasePath,
   tableName
 ) => {
   let oldPropertyValue = await checkIfPropertyExists(
