@@ -146,7 +146,7 @@ const updatePriceTracker = async (
   const dbGetAsync = util.promisify(db.get).bind(db);
   await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
-    priceTracker JSON
+    ChangeTrack JSON
   )`);
   const row = await dbGetAsync(
     `SELECT ChangeTrack from ${tableName} WHERE MLS=${property.MLS}`
