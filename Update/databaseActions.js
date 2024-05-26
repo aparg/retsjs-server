@@ -193,7 +193,6 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
       sql: updatePriceTrackerQuery,
       params: [...values, property.MLS],
     });
-    createConsoleLog(__filename, `p`);
   } else {
     //if the property does not exist in the tracking table
     const updatePriceTrackerQuery = `INSERT INTO ${tableName}(MLS, date, price) VALUES(?,?,?)`;
