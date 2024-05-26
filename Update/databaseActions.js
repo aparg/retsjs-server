@@ -148,6 +148,13 @@ const updatePriceTracker = async (
   );
   const db = new sqlite3.Database(dbPath);
   const dbGetAsync = util.promisify(db.get).bind(db);
+  createConsoleLog(
+    __filename,
+    `fix: the query will be CREATE TABLE IF NOT EXISTS ${tableName}(
+    MLS TEXT PRIMARY KEY,
+    ChangeTrack JSON
+  );`
+  );
   const tableCreation =
     await dbGetAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
     MLS TEXT PRIMARY KEY,
