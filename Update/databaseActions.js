@@ -142,6 +142,10 @@ const updatePriceTracker = async (
 ) => {
   const tableName = "PriceTracker";
   const dbPath = path.resolve(__dirname, databasePath);
+  createConsoleLog(
+    __filename,
+    `the database path for price tracking database is ${dbPath}`
+  );
   const db = new sqlite3.Database(dbPath);
   const dbGetAsync = util.promisify(db.get).bind(db);
   const tableCreation =
