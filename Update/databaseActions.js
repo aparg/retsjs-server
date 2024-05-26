@@ -192,7 +192,7 @@ const updatePriceTracker = async (
         `pushing ${trackingValue} to pricetracker array`
       );
       //push it to the array
-      priceTrackerArray.push(trackingValue);
+      priceTrackerArray.push(JSON.stringify(trackingValue));
       //object for creating a query
       const dbValues = {
         ChangeTrack: JSON.stringify(priceTrackerArray),
