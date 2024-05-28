@@ -88,17 +88,17 @@ const updateListingPrice = async (
     );
 
     // Update PriceTracker array with current ListPrice and TimestampSql
-    const newPriceEntry = [`${property.ListPrice}`, `${property.TimestampSql}`];
-    createConsoleLog(
-      __filename,
-      `The new pricetracker array is ${newPriceEntry}`
-    );
-    if (typeof property.PriceTracker !== "object" || !property.PriceTracker) {
-      property.PriceTracker = JSON.stringify([]);
-    }
-    const priceTrackerValue = JSON.parse(property.PriceTracker);
-    priceTrackerValue.push(JSON.stringify(newPriceEntry));
-    property.PriceTracker = JSON.stringify(priceTrackerValue);
+    // const newPriceEntry = [`${property.ListPrice}`, `${property.TimestampSql}`];
+    // createConsoleLog(
+    //   __filename,
+    //   `The new pricetracker array is ${newPriceEntry}`
+    // );
+    // if (typeof property.PriceTracker !== "object" || !property.PriceTracker) {
+    //   property.PriceTracker = JSON.stringify([]);
+    // }
+    // const priceTrackerValue = JSON.parse(property.PriceTracker);
+    // priceTrackerValue.push(JSON.stringify(newPriceEntry));
+    // property.PriceTracker = JSON.stringify(priceTrackerValue);
     // Check if ListPrice is lower or equal to MinListPrice
     if (
       parseFloat(property.ListPrice) <=
