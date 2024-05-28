@@ -157,44 +157,52 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
     property.MLS
   );
   if (row) {
-    //this means the property's price had already started
+    //this means the property's price tracking had already started
     //the row required to update is extracted
     //we use comma separated values for date and price
-    createConsoleLog(
-      __filename,
-      `mls exists in pricetracker, updating pricing`
-    );
-    let dateArray = [];
-    row.date && dateArray.push(row.date);
-    property.TimestampSql
-      ? dateArray.push(property.TimestampSql)
-      : dateArray.push("");
-    let date = dateArray.join(", ");
+    //check if the price has changed since the last entry in price tracker
+    if (
+      row.price &&
+      row.price.split(",")[row.price.length - 1].trim() !==
+        property.ListPrice.trim()
+    ) {
+      //add a new date entry
+      let dateArray = [];
+      row.date && dateArray.push(row.date);
+      property.TimestampSql
+        ? dateArray.push(property.TimestampSql)
+        : dateArray.push("");
+      let date = dateArray.join(", ");
 
-    let priceArray = [];
-    row.price && priceArray.push(row.price);
-    property.ListPrice
-      ? priceArray.push(property.ListPrice)
-      : priceArray.push("");
-    let price = priceArray.join(", ");
+      //add a new price entry
+      let priceArray = [];
+      row.price && priceArray.push(row.price);
+      property.ListPrice
+        ? priceArray.push(property.ListPrice)
+        : priceArray.push("");
+      let price = priceArray.join(", ");
 
-    const dbValues = {
-      date,
-      price,
-    };
+      const dbValues = {
+        date,
+        price,
+      };
+      const keys = Object.keys(dbValues);
+      const values = Object.values(dbValues);
+      const updatePriceTrackerQuery = `UPDATE ${tableName} SET ${keys
+        .map((key) => `${key} = ?`)
+        .join(",")} WHERE MLS= ?`;
 
-    const values = Object.values(dbValues);
-    const updatePriceTrackerQuery = `UPDATE ${tableName} SET date = ?, price = ? WHERE MLS= ?`;
-
-    createConsoleLog(
-      __filename,
-      `pricetracker query is ${updatePriceTrackerQuery}`
-    );
-
-    clauseCollection.push({
-      sql: updatePriceTrackerQuery,
-      params: [...values, property.MLS],
-    });
+      clauseCollection.push({
+        sql: updatePriceTrackerQuery,
+        params: [...values, property.MLS],
+      });
+      createConsoleLog(
+        __filename,
+        `price has changed for property ${property.MLS}`
+      );
+    } else {
+      createConsoleLog(__filename, `price hasn't changed for ${property.MLS}`);
+    }
   } else {
     //if the property does not exist in the tracking table
     const updatePriceTrackerQuery = `INSERT INTO ${tableName}(MLS, date, price) VALUES(?,?,?)`;
