@@ -160,6 +160,10 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
     //this means the property's price had already started
     //the row required to update is extracted
     //we use comma separated values for date and price
+    createConsoleLog(
+      __filename,
+      `mls exists in pricetracker, updating pricing`
+    );
     let dateArray = [];
     row.date && dateArray.push(row.date);
     property.TimestampSql
