@@ -161,10 +161,10 @@ const updatePriceTracker = async (property, databasePath, clauseCollection) => {
     //the row required to update is extracted
     //we use comma separated values for date and price
     //check if the price has changed since the last entry in price tracker
+    const priceArray = row.price.split(",");
     if (
       row.price &&
-      row.price.split(",")[row.price.length - 1].trim() !==
-        property.ListPrice.trim()
+      priceArray[priceArray.length - 1].trim() !== property.ListPrice.trim()
     ) {
       //add a new date entry
       let dateArray = [];
