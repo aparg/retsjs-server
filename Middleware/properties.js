@@ -61,6 +61,7 @@ const addSelectConditions = (conditions, selectFields) => {
     const [fieldName, value] = field.split("=");
     // console.log(fieldName, value);
     if (fieldName === "OrderBy" && value === "ListPrice") {
+      console.log("orderby found");
       orderBy.pop();
       orderBy.push(`${value} AS FLOAT`);
     } else {
