@@ -59,7 +59,7 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
 const addSelectConditions = (conditions, selectFields) => {
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
-    // console.log(fieldName, value);
+    console.log(fieldName, value);
     if (fieldName === "OrderBy" && value === "ListPrice") {
       console.log("orderby found");
       orderBy.pop();
