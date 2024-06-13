@@ -34,7 +34,7 @@ const buildDatabaseQuery = ({
   const query = `SELECT * FROM ${tableName}`;
   const conditions = [];
   let orderBy = ["TimestampSql"];
-  addSelectConditions(conditions, selectFields);
+  addSelectConditions(conditions, orderBy, selectFields);
   addSelectOrConditions(conditions, selectOrFields); // Add conditions for $selectOr
   addRangeConditions(conditions, rangeFields);
   return addLimitOffset(
@@ -56,7 +56,7 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
   }
 };
 
-const addSelectConditions = (conditions, selectFields) => {
+const addSelectConditions = (conditions, orderBy, selectFields) => {
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
     if (fieldName === "OrderBy" && value === "ListPrice") {
