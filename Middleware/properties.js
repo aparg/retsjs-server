@@ -63,9 +63,10 @@ const addSelectConditions = (conditions, selectFields) => {
     if (fieldName === "OrderBy" && value === "ListPrice") {
       orderBy.pop();
       orderBy.push(`${value} AS FLOAT`);
+    } else {
+      const condition = getConditionString(fieldName, value);
+      conditions.push(condition);
     }
-    const condition = getConditionString(fieldName, value);
-    conditions.push(condition);
   });
 };
 
@@ -98,6 +99,7 @@ const getConditionString = (fieldName, value) => {
   if (fieldName === "PriceDecreased" && value === "true") {
     return `CAST(MinListPrice AS REAL) = CAST(ListPrice AS REAL) AND CAST(MinListPrice AS REAL) < CAST(MaxListPrice AS REAL)`;
   }
+
   if (value === "true" || value === "false") {
     return `${fieldName} = ${value}`;
   }
