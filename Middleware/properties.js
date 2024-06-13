@@ -6,6 +6,7 @@ const handleOptionalParameters = (req, res, next) => {
   const skip = parseInt($skip) || 0;
 
   const selectFields = parseSelectParameters($select);
+  console.log(selectFields);
   const rangeFields = parseRangeParameters($range);
   const selectOrFields = parseSelectParameters($selectOr); // Parse $selectOr parameters
 
