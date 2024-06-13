@@ -6,7 +6,6 @@ const handleOptionalParameters = (req, res, next) => {
   const skip = parseInt($skip) || 0;
 
   const selectFields = parseSelectParameters($select);
-  console.log(selectFields);
   const rangeFields = parseRangeParameters($range);
   const selectOrFields = parseSelectParameters($selectOr); // Parse $selectOr parameters
 
@@ -58,10 +57,8 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
 };
 
 const addSelectConditions = (conditions, selectFields) => {
-  console.log("adding select conditions");
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
-    console.log(fieldName, value);
     if (fieldName === "OrderBy" && value === "ListPrice") {
       console.log("orderby found");
       orderBy.pop();
