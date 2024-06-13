@@ -33,17 +33,14 @@ const buildDatabaseQuery = ({
 }) => {
   const query = `SELECT * FROM ${tableName}`;
   const conditions = [];
-
+  let orderBy = ["TimestampSql"];
   addSelectConditions(conditions, selectFields);
   addSelectOrConditions(conditions, selectOrFields); // Add conditions for $selectOr
   addRangeConditions(conditions, rangeFields);
-  console.log(
-    `${query} WHERE ${conditions.join(" AND ")} ORDER BY TimestampSql DESC`
-  );
   return addLimitOffset(
     conditions.length
-      ? `${query} WHERE ${conditions.join(" AND ")} ORDER BY TimestampSql DESC`
-      : `${query} ORDER BY TimestampSql DESC`,
+      ? `${query} WHERE ${conditions.join(" AND ")} ORDER BY ${orderBy[0]} DESC`
+      : `${query} ORDER BY ${orderBy} DESC`,
     limit,
     skip
   );
@@ -63,6 +60,10 @@ const addSelectConditions = (conditions, selectFields) => {
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
     // console.log(fieldName, value);
+    if (fieldName === "OrderBy" && value === "ListPrice") {
+      orderBy.pop();
+      orderBy.push(`${value} AS FLOAT`);
+    }
     const condition = getConditionString(fieldName, value);
     conditions.push(condition);
   });
@@ -70,7 +71,6 @@ const addSelectConditions = (conditions, selectFields) => {
 
 const addRangeConditions = (conditions, rangeFields) => {
   const rangeValues = {};
-
   rangeFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
     const match = fieldName.match(/^(min|max)/);
