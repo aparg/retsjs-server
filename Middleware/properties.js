@@ -65,6 +65,7 @@ const addSelectConditions = (conditions, selectFields) => {
       orderBy.pop();
       orderBy.push(`${value} AS FLOAT`);
     } else {
+      console.log("this is a condition");
       const condition = getConditionString(fieldName, value);
       conditions.push(condition);
     }
