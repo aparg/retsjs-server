@@ -57,6 +57,7 @@ const addSelectOrConditions = (conditions, selectOrFields) => {
 };
 
 const addSelectConditions = (conditions, selectFields) => {
+  console.log("adding select conditions");
   selectFields.forEach((field) => {
     const [fieldName, value] = field.split("=");
     console.log(fieldName, value);
