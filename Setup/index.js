@@ -12,8 +12,7 @@ const writeToDatabase = require('./writeToDatabase');
 
 const utcTimeZoneFormatter = require('../Utils/utcTimeZoneFormatter');
 
-const createConsoleLog = require('../Utils/createConsoleLog');
-const ensureDirectoryExists = require('../Utils/ensureDirectoryExists');
+const createConsoleLog = require('../Utils/createConsoleLog')
 
 const writeToDatabaseFunction = async (setUpPropertyType, timeStampSql, propertySchemaName, databaseDirectoryName, databaseName, tableName) => {
     for (const propertySetup of setUpPropertyType) {
@@ -34,7 +33,6 @@ const writeToDatabaseFunction = async (setUpPropertyType, timeStampSql, property
 
         const initialDataDirectoryPath = path.join(mainDataDirectory, databaseDirectoryName, `initial${propertySetup}.xml`);
 
-        await ensureDirectoryExists(initialDataDirectoryPath);
         await fs.writeFile(initialDataDirectoryPath, propertyDataApi.data);
 
         // We need to now retrieve images. We pass an array of MLS values to retrieve data from and the directory to save them at.
@@ -63,7 +61,6 @@ const setUpProperties = async (setUpPropertyType, initialStartTime) => {
         const preprocessMetaDataCombined = await getPropertyFieldsMetadata(individualProperty);
         // We write this information into the `../PropertyTypeMetadata/` folder for future reference. 
         const metaDataPath = path.join(__dirname, `./PropertyTypeMetadata/${individualProperty}.xml`)
-        await ensureDirectoryExists(metaDataPath)
         await fs.writeFile(metaDataPath, preprocessMetaDataCombined.data)
         preprocessMetaData.push(preprocessMetaDataCombined.data)
     }
@@ -78,7 +75,7 @@ const setUpProperties = async (setUpPropertyType, initialStartTime) => {
     // Wit the database set up, we need to populate it with latest updates.
     // The rets api requires time stamp to be passsed in UTC formatting. As such a helper function has been created.
     // More information at ../Utils/utcTimeZoneFormatter'.
-
+    
     const timeStampSql = utcTimeZoneFormatter(initialStartTime);
 
     // We then make api call to the function getPropertyData. We need to specify the property type to be looked up updated after the specified time frame.
@@ -94,7 +91,7 @@ const setUpProperties = async (setUpPropertyType, initialStartTime) => {
 const setImages = async (propertyMls, databaseDirectoryName) => {
     // The Treb3pv server responds with binary data of all photos relative to a listing in binary data. This means the response is huge.
     // As such, properties are batched into 10 and image data processed. 
-    const batchSize = 20;
+    const batchSize = 10;
     const totalProperties = propertyMls.length;
     let propertiesProcessed = 0;
     let updatedImagesObject = {};
@@ -114,7 +111,7 @@ const setImages = async (propertyMls, databaseDirectoryName) => {
 
         // Update the count of processed properties
         propertiesProcessed += batch.length;
-        createConsoleLog(__filename, `processed ${propertiesProcessed} out  of ${totalProperties} properties`)
+        createConsoleLog(__filename, `processed ${propertiesProcessed} out  of ${totalProperties} requests`)
     }
 
     createConsoleLog(__filename, `Image update completed`)

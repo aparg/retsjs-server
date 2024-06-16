@@ -2,8 +2,7 @@ const fs = require("fs").promises;
 
 const path = require('path');
 
-const createConsoleLog = require('../../Utils/createConsoleLog');
-const ensureDirectoryExists = require("../../Utils/ensureDirectoryExists");
+const createConsoleLog = require('../../Utils/createConsoleLog')
 
 // We are writing an object key value pattern into a file. A predefined object schema file exists. Check '../ObjectSchemas/defaultObjectSchema.js' 
 //The new schema file is saved at folder: '../ObjectSchemas/'
@@ -45,7 +44,6 @@ const updateObjectSchema = async (standardNameValues, propertyType, objectSchema
 
         // Write the updated schema.js content to a new file
         const generatedSchemaFilePath = path.join(objectSchemaDirectoryPath, `${propertySchema}.js`);
-        await ensureDirectoryExists(generatedSchemaFilePath);
         await fs.writeFile(generatedSchemaFilePath, schemaContent);
         createConsoleLog(__filename, `updated default object schema and saved to ${generatedSchemaFilePath}`)
 
