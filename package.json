@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "setup": "node --env-file=config.env -e \"require('./Setup').initializeAllProperties([['ResidentialProperty', 'CondoProperty'], ['CommercialProperty']], 24)\"",
-    "update": "node --env-file=config.env -e \"require('./Update').updatePropertyTypeMain(['ResidentialProperty', 'CondoProperty', 'CommercialProperty'], 6)\"",
+    "setup": "node --env-file=config.env -e \"require('./Setup').initializeAllProperties([['ResidentialProperty', 'CondoProperty'],['CommercialProperty']], 2400)\"",
+    "update": "node --env-file=config.env -e \"require('./Update').updatePropertyTypeMain(['ResidentialProperty', 'CondoProperty'], 48)\"",
     "delete": "node --env-file=config.env -e \"require('./Delete').deletePropertyTypeMain(['ResidentialProperty', 'CondoProperty', 'CommercialProperty'])\""
   },
   "keywords": [

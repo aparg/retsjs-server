@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 
 //make residential images available
 app.use(
-  "/residentialPhotos",
+  "/residentialPhotos", cors(),
   express.static(path.join(__dirname, "./Data/ResidentialAndCondos/Photos/"))
 );
 
@@ -52,7 +52,7 @@ app.use(
 );
 
 //Seperating routes into residential, commercial and condos
-app.use("/residential", residentialRoutes);
+app.use("/residential", cors(), residentialRoutes);
 
 app.use("/commercial", commercialRoutes);
 
