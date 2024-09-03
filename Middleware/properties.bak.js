@@ -2,13 +2,8 @@ const handleOptionalParameters = (req, res, next) => {
   const tableName = req.tableName;
   const { $limit, $skip, $select, $range, $selectOr, $avg, $search } =
     req.query;
-  let limit = 10;
-  if (parseInt($limit)) {
-    limit = parseInt($limit);
-  } else if ($avg) {
-    limit = 500;
-  }
-  // const limit = $limit ? parseInt($limit) : $avg ? 500 : 10;
+
+  const limit = parseInt($limit) || $avg ? 500 : 10;
   const skip = parseInt($skip) || 0;
   const searchValue = parseSearchParameter($search);
   const selectFields = parseSelectParameters($select);
@@ -121,7 +116,6 @@ const getConditionString = (fieldName, value) => {
 };
 
 const addLimitOffset = (query, limit, skip) => {
-  console.log(query + ` LIMIT ${limit} OFFSET ${skip}`);
   return query + ` LIMIT ${limit} OFFSET ${skip}`;
 };
 
@@ -136,4 +130,3 @@ const parseSearchParameter = (value) => (value ? value : null);
 module.exports = {
   handleOptionalParameters,
 };
-
