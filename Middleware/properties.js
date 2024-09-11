@@ -121,7 +121,6 @@ const getConditionString = (fieldName, value) => {
 };
 
 const addLimitOffset = (query, limit, skip) => {
-  console.log(query + ` LIMIT ${limit} OFFSET ${skip}`);
   return query + ` LIMIT ${limit} OFFSET ${skip}`;
 };
 
@@ -136,4 +135,3 @@ const parseSearchParameter = (value) => (value ? value : null);
 module.exports = {
   handleOptionalParameters,
 };
-
