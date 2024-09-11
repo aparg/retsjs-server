@@ -81,7 +81,7 @@ const parseAvg = async (req, res, db, responseObj, tableName, conditions) => {
   const { $spanMonths } = req.query;
   const avgSQL = "AVG(ListPrice)";
   const databaseQuery = `SELECT ${avgSQL} FROM ${tableName} WHERE  ${
-    conditions.length > 0 ? `${conditions.join("AND")} AND` : ""
+    conditions.length > 0 ? `${conditions.join(" AND ")} AND` : ""
   } strftime('%Y-%m-%d', TimestampSql) >= DATE('now', '-${
     $spanMonths || 3
   } months')`;
