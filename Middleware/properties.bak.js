@@ -84,6 +84,7 @@ const addRangeConditions = (conditions, rangeFields) => {
     const [fieldName, value] = field.split("=");
     const match = fieldName.match(/^(min|max)/);
 
+    console.log(match);
     if (match) {
       const minMaxType = match[0];
       const key = fieldName.substring(3);

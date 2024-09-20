@@ -25,7 +25,6 @@ const handleOptionalParameters = (req, res, next) => {
     tableName,
     avgField,
   });
-
   req.databaseQuery = databaseQuery;
 
   next();
@@ -93,13 +92,18 @@ const addRangeConditions = (conditions, rangeFields) => {
       const minMaxType = match[0];
       const key = fieldName.substring(3);
       rangeValues[minMaxType] = rangeValues[minMaxType] || {};
-      rangeValues[minMaxType][key] = parseInt(value);
+      rangeValues[minMaxType][key] =
+        key !== "TimestampSql" ? parseInt(value) : value;
     }
   });
 
   Object.entries(rangeValues).forEach(([minMaxType, values]) => {
     Object.entries(values).forEach(([key, value]) => {
       const operator = minMaxType === "min" ? ">=" : "<=";
+      if (key === "TimestampSql") {
+        conditions.push(`TimestampSql ${operator} '${value}'`);
+        return;
+      }
       conditions.push(
         `CAST(${key} AS REAL) ${operator} CAST(${value} AS REAL)`
       );
