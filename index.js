@@ -19,7 +19,7 @@ const commercialRoutes = require("./Routes/commercial");
 const getLatLongRoutes = require("./Routes/getLatLong");
 
 //Importing property search routes
-const propertySearchRoutes = require("./Routes/propertySearch")
+const propertySearchRoutes = require("./Routes/propertySearch");
 
 // Create Redis client
 const redisClient = redis.createClient();
@@ -27,8 +27,10 @@ redisClient.on("error", (error) => console.error(`Redis Error: ${error}`));
 redisClient.connect();
 
 // Create Redis client for get-lat-long routes with a different database
-const getLatLongRedisClient = redis.createClient(); 
-getLatLongRedisClient.on("error", (error) => console.error(`GetLatLong Redis Error: ${error}`));
+const getLatLongRedisClient = redis.createClient();
+getLatLongRedisClient.on("error", (error) =>
+  console.error(`GetLatLong Redis Error: ${error}`)
+);
 getLatLongRedisClient.connect();
 getLatLongRedisClient.select(1);
 
@@ -41,7 +43,8 @@ app.use((req, res, next) => {
 
 //make residential images available
 app.use(
-  "/residentialPhotos", cors(),
+  "/residentialPhotos",
+  cors(),
   express.static(path.join(__dirname, "./Data/ResidentialAndCondos/Photos/"))
 );
 
@@ -54,14 +57,16 @@ app.use(
 //Seperating routes into residential, commercial and condos
 app.use("/residential", cors(), residentialRoutes);
 
-app.use("/commercial", commercialRoutes);
+app.use("/commercial", cors(), commercialRoutes);
 
 //Integrating get-lat-long-queue
 app.use("/get-lat-long", cors(), getLatLongRoutes);
 
 //Integreate search
-app.use("/propertySearch", propertySearchRoutes)
+app.use("/propertySearch", propertySearchRoutes);
 
 app.listen(PORT, () => {
-  console.log(`${new Date(Date.now()).toLocaleString()}: Server running on port: ${PORT}`);
+  console.log(
+    `${new Date(Date.now()).toLocaleString()}: Server running on port: ${PORT}`
+  );
 });
