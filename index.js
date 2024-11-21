@@ -21,6 +21,9 @@ const getLatLongRoutes = require("./Routes/getLatLong");
 //Importing property search routes
 const propertySearchRoutes = require("./Routes/propertySearch");
 
+//Importing chat routes
+const noteRoutes = require("./Routes/notes");
+
 // Create Redis client
 const redisClient = redis.createClient();
 redisClient.on("error", (error) => console.error(`Redis Error: ${error}`));
@@ -64,6 +67,9 @@ app.use("/get-lat-long", cors(), getLatLongRoutes);
 
 //Integreate search
 app.use("/propertySearch", propertySearchRoutes);
+
+//Chat route integration
+app.use("/notes", cors(), noteRoutes);
 
 app.listen(PORT, () => {
   console.log(
