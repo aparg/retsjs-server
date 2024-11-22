@@ -30,7 +30,7 @@ router.post("/:route", async (req, res) => {
 });
 
 // Changed from GET to POST for better security with email handling
-router.post("/:route/getmessages", (req, res) => {
+router.post("/:route/getmessages", async (req, res) => {
   const { route } = req.params;
   const { email, listingId } = req.body; // Changed from req.query to req.body
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
@@ -41,7 +41,7 @@ router.post("/:route/getmessages", (req, res) => {
   const db = new sqlite3.Database(dbPath);
   console.log(email, listingId);
   const query = `SELECT message, email, listingId FROM ${tableName} WHERE (email=? OR receiver = ?) AND listingId = ?`;
-  db.all(query, [email, email, listingId], (err, rows) => {
+  await db.all(query, [email, email, listingId], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -49,7 +49,7 @@ router.post("/:route/getmessages", (req, res) => {
   });
 });
 
-router.get("/:route/all-notes", (req, res) => {
+router.get("/:route/all-notes", async (req, res) => {
   // CORS check
   const allowedOrigins = ["https://lowrise.ca", "http://localhost:4000"]; // Adjust these domains
   const origin = req.headers.origin;
@@ -70,7 +70,7 @@ router.get("/:route/all-notes", (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   const query = `SELECT * FROM ${tableName}`;
-  db.all(query, [], (err, rows) => {
+  await db.all(query, [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
