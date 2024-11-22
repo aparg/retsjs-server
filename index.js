@@ -5,7 +5,10 @@ const path = require("path");
 
 const redis = require("redis");
 
+const requestIp = require("request-ip");
+
 const app = express();
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
@@ -24,6 +27,8 @@ const propertySearchRoutes = require("./Routes/propertySearch");
 //Importing chat routes
 const noteRoutes = require("./Routes/notes");
 
+const bodyParser = require("body-parser");
+
 // Create Redis client
 const redisClient = redis.createClient();
 redisClient.on("error", (error) => console.error(`Redis Error: ${error}`));
@@ -37,6 +42,11 @@ getLatLongRedisClient.on("error", (error) =>
 getLatLongRedisClient.connect();
 getLatLongRedisClient.select(1);
 
+// inside middleware handler
+const ipMiddleware = function (req, res, next) {
+  req.clientIp = requestIp.getClientIp(req);
+  next();
+};
 // Pass the Redis client to the routes
 app.use((req, res, next) => {
   req.redisClient = redisClient;
@@ -69,6 +79,8 @@ app.use("/get-lat-long", cors(), getLatLongRoutes);
 app.use("/propertySearch", propertySearchRoutes);
 
 //Chat route integration
+//use bodyparser to parse json
+app.use(bodyParser.json());
 app.use("/notes", cors(), noteRoutes);
 
 app.listen(PORT, () => {
