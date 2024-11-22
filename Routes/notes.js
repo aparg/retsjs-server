@@ -51,7 +51,7 @@ router.post("/:route/getmessages", (req, res) => {
 
 router.get("/:route/all-notes", (req, res) => {
   // CORS check
-  const allowedOrigins = ["https://lowrise.ca/", "http://localhost:4000"]; // Adjust these domains
+  const allowedOrigins = ["https://lowrise.ca", "http://localhost:4000"]; // Adjust these domains
   const origin = req.headers.origin;
 
   if (!allowedOrigins.includes(origin)) {
