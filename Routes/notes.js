@@ -123,7 +123,7 @@ router.delete("/:route/delete-messages", async (req, res) => {
   res.header("Access-Control-Allow-Origin", origin);
   res.header("Access-Control-Allow-Methods", "DELETE");
 
-  const { email } = req.body;
+  const { email, listingId } = req.body; // Added listingId
   const { route } = req.params;
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
@@ -132,8 +132,18 @@ router.delete("/:route/delete-messages", async (req, res) => {
   );
   const db = new sqlite3.Database(dbPath);
 
-  const query = `DELETE FROM ${tableName} WHERE email = ? OR receiver = ?`;
-  db.run(query, [email, email], (err) => {
+  let query, params;
+  if (listingId) {
+    // Delete messages for specific email and listingId
+    query = `DELETE FROM ${tableName} WHERE (email = ? OR receiver = ?) AND listingId = ?`;
+    params = [email, email, listingId];
+  } else {
+    // Delete all messages for email
+    query = `DELETE FROM ${tableName} WHERE email = ? OR receiver = ?`;
+    params = [email, email];
+  }
+
+  db.run(query, params, (err) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
