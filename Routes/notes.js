@@ -111,4 +111,34 @@ router.post("/:route/admin-message", (req, res) => {
   });
 });
 
+router.delete("/:route/delete-messages", async (req, res) => {
+  // CORS check
+  const allowedOrigins = ["https://lowrise.ca", "http://localhost:4000"];
+  const origin = req.headers.origin;
+
+  if (!allowedOrigins.includes(origin)) {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+
+  res.header("Access-Control-Allow-Origin", origin);
+  res.header("Access-Control-Allow-Methods", "DELETE");
+
+  const { email } = req.body;
+  const { route } = req.params;
+  const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
+  const dbPath = path.resolve(
+    __dirname,
+    `../Data/${databaseDirectoryName}/${dbName}`
+  );
+  const db = new sqlite3.Database(dbPath);
+
+  const query = `DELETE FROM ${tableName} WHERE email = ? OR receiver = ?`;
+  db.run(query, [email, email], (err) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    return res.status(200).json({ message: "Messages deleted successfully" });
+  });
+});
+
 module.exports = router;
