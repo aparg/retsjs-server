@@ -62,7 +62,7 @@ router.post("/:route/getmessages", async (req, res) => {
   try {
     await ensureTable(db);
     console.log(email, listingId);
-    const query = `SELECT message, email, listingId, timestamp FROM ${tableName} WHERE (email=? OR receiver = ?) AND listingId = ? ORDER BY timestamp DESC`;
+    const query = `SELECT message, email, listingId, timestamp FROM ${tableName} WHERE (email=? OR receiver = ?) AND listingId = ? ORDER BY timestamp ASC`;
     await db.all(query, [email, email, listingId], (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
@@ -120,8 +120,8 @@ router.post("/:route/admin-message", async (req, res) => {
   res.header("Access-Control-Allow-Origin", origin);
   res.header("Access-Control-Allow-Methods", "POST");
 
-  const { message, receiver, listingId } = req.body;
-  const email = "milan@homebaba.ca"; // Fixed email for all messages
+  const { message, receiver, listingId, timestamp } = req.body;
+  const email = "milan@homebaba.ca";
   const { route } = req.params;
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
@@ -132,8 +132,8 @@ router.post("/:route/admin-message", async (req, res) => {
 
   try {
     await ensureTable(db);
-    const query = `INSERT INTO ${tableName} (message, email, listingId, receiver) VALUES (?, ?, ?, ?)`;
-    db.run(query, [message, email, listingId, receiver], (err) => {
+    const query = `INSERT INTO ${tableName} (message, email, listingId, receiver, timestamp) VALUES (?, ?, ?, ?, ?)`;
+    db.run(query, [message, email, listingId, receiver, timestamp], (err) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
