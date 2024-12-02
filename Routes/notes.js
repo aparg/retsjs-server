@@ -2,68 +2,140 @@ const express = require("express");
 const router = express.Router();
 const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
-const tableName = "notesTable";
+const messagesTableName = "messages";
+const usersTableName = "users";
 const getDatabaseInfo = require("../Utils/getDatbaseInfo");
 
-// Helper function to ensure table exists
-const ensureTable = (db) => {
+// Modified helper function to ensure both tables exist
+const ensureTables = (db) => {
   return new Promise((resolve, reject) => {
-    const createTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName} (
+    // Create users table first
+    const createUsersTableQuery = `CREATE TABLE IF NOT EXISTS ${usersTableName} (
       id TEXT PRIMARY KEY,
-      message TEXT, 
-      email TEXT, 
-      listingId TEXT, 
-      receiver TEXT, 
+      username TEXT,
+      email TEXT UNIQUE,
+      phone TEXT,
+      created_at DATE DEFAULT CURRENT_TIMESTAMP,
+      last_activity DATE
+    )`;
+
+    // Create messages table with foreign key to users
+    const createMessagesTableQuery = `CREATE TABLE IF NOT EXISTS ${messagesTableName} (
+      id TEXT PRIMARY KEY,
+      message TEXT,
+      sender_id TEXT,
+      receiver_id TEXT,
+      listingId TEXT,
       timestamp DATE,
       replyTo TEXT,
-      FOREIGN KEY (replyTo) REFERENCES ${tableName}(id)
+      filters TEXT,
+      FOREIGN KEY (sender_id) REFERENCES ${usersTableName}(id),
+      FOREIGN KEY (receiver_id) REFERENCES ${usersTableName}(id),
+      FOREIGN KEY (replyTo) REFERENCES ${messagesTableName}(id)
     )`;
-    db.run(createTableQuery, (err) => {
-      if (err) reject(err);
-      resolve();
+
+    // Create tables in sequence
+    db.run(createUsersTableQuery, (err) => {
+      if (err) return reject(err);
+
+      db.run(createMessagesTableQuery, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
     });
   });
 };
 
-const createThread = (rows) => {
-  // Organize messages into threads
-  const threads = rows.reduce((acc, row) => {
-    if (!row.replyTo) {
-      // This is a parent message
-      if (!acc[row.id]) {
-        acc[row.id] = {
-          id: row.id,
-          message: row.message,
-          email: row.email,
-          timestamp: row.timestamp,
-          listingId: row.listingId || null,
-          replies: [],
-        };
-      }
-      // Add reply if it exists
-      if (row.reply_id) {
-        acc[row.id].replies.push({
-          id: row.reply_id,
-          message: row.reply_message,
-          email: row.reply_email,
-          timestamp: row.reply_timestamp,
-        });
-      }
-    }
-    return acc;
-  }, {});
+// Helper function to ensure user exists
+const ensureUser = (db, email, username = null, phone = null) => {
+  return new Promise((resolve, reject) => {
+    // First try to find the user
+    db.get(
+      `SELECT id FROM ${usersTableName} WHERE email = ?`,
+      [email],
+      (err, row) => {
+        if (err) return reject(err);
 
-  return Object.values(threads);
+        if (row) {
+          // User exists, return their id
+          resolve(row.id);
+        } else {
+          // Create new user
+          const userId = `user_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 11)}`;
+          db.run(
+            `INSERT INTO ${usersTableName} (id, username, email, phone) VALUES (?, ?, ?, ?)`,
+            [userId, username || email?.split("@")[0] || "", email, phone],
+            (err) => {
+              if (err) return reject(err);
+              resolve(userId);
+            }
+          );
+        }
+      }
+    );
+  });
 };
 
-//Post route that takes in message and ip address and saves it to the database
+// Add this function before the routes
+const createThread = (rows) => {
+  const threads = {};
+
+  rows.forEach((row) => {
+    const parentId = row.replyTo || row.id;
+
+    // If this is a parent message or we haven't seen it yet
+    if (!threads[parentId]) {
+      threads[parentId] = {
+        id: parentId,
+        message: row.replyTo ? null : row.message,
+        sender_email: row.sender_email,
+        receiver_email: row.replyTo ? null : row.receiver_email,
+        listingId: row.replyTo ? null : row.listingId,
+        timestamp: row.replyTo ? null : row.timestamp,
+        filters: row.replyTo ? null : row.filters,
+        replies: [],
+      };
+    }
+
+    // If this is a reply, add it to the parent's replies array
+    if (row.replyTo) {
+      threads[parentId].replies.push({
+        id: row.id,
+        message: row.message,
+        sender_email: row.sender_email,
+        receiver_email: row.receiver_email,
+        timestamp: row.timestamp,
+      });
+    }
+  });
+
+  // Remove any threads that only contain null values (orphaned replies)
+  const validThreads = Object.values(threads).filter(
+    (thread) => thread.message !== null
+  );
+
+  // Sort by timestamp, newest first
+  return validThreads.sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+};
+
+// Update the post route to handle the new structure
 router.post("/:route", async (req, res) => {
-  const receiver = "admin";
-  //get timestamp from body and also add timestamp in the table
-  const { message, email, listingId, timestamp, replyTo } = req.body;
+  const {
+    message,
+    sender_email,
+    receiver_email,
+    listingId,
+    timestamp,
+    replyTo,
+    filters,
+  } = req.body;
   const messageId = `msg_${Date.now()}_${Math.random()
     .toString(36)
-    .substring(2, 11)}`; // Generate unique ID
+    .substring(2, 11)}`;
   const { route } = req.params;
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
@@ -73,29 +145,49 @@ router.post("/:route", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
-    await ensureTable(db);
-    const query = `INSERT INTO ${tableName} (id, message, email, listingId, receiver, timestamp, replyTo) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    await ensureTables(db);
+    const receiverId = await ensureUser(db, receiver_email);
+    // Ensure sender exists and get their ID
+    const senderId = await ensureUser(db, sender_email);
+    // Ensure admin user exists
+    const adminId = await ensureUser(db, "milan@homebaba.ca", "Admin");
+
+    // Update last_activity for the sender
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE ${usersTableName} SET last_activity = CURRENT_TIMESTAMP WHERE id = ?`,
+        [senderId],
+        (err) => {
+          if (err) reject(err);
+          resolve();
+        }
+      );
+    });
+
+    const query = `INSERT INTO ${messagesTableName} 
+      (id, message, sender_id, receiver_id, listingId, timestamp, replyTo, filters) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
     await db.run(
       query,
       [
         messageId,
         message,
-        email,
+        senderId,
+        receiverId || adminId, // admin is always the receiver in this case
         listingId,
-        receiver,
         timestamp,
         replyTo || null,
+        filters ? JSON.stringify(filters) : null,
       ],
       (err) => {
         if (err) {
           return res.status(500).json({ error: err.message });
-        } else {
-          return res.status(200).json({
-            message: "Note saved successfully",
-            messageId: messageId,
-          });
         }
+        return res.status(200).json({
+          message: "Note saved successfully",
+          messageId: messageId,
+        });
       }
     );
   } catch (err) {
@@ -106,7 +198,7 @@ router.post("/:route", async (req, res) => {
 // Changed from GET to POST for better security with email handling
 router.post("/:route/getmessages", async (req, res) => {
   const { route } = req.params;
-  const { email, listingId } = req.body; // Changed from req.query to req.body
+  const { email, listingId } = req.body;
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
     __dirname,
@@ -115,24 +207,32 @@ router.post("/:route/getmessages", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
-    await ensureTable(db);
+    await ensureTables(db);
+
+    // Get user ID first
+    const userId = await ensureUser(db, email);
+
     const query = `
-      SELECT m1.*, m2.message as reply_message, m2.timestamp as reply_timestamp, 
-             m2.email as reply_email, m2.id as reply_id
-      FROM ${tableName} m1
-      LEFT JOIN ${tableName} m2 ON m1.id = m2.replyTo
-      WHERE (m1.email=? OR m1.receiver = ?)
-      ${listingId ? "AND m1.listingId = ?" : ""}
-      ORDER BY m1.timestamp ASC, m2.timestamp ASC`;
+      SELECT 
+        m.id, m.message, m.listingId, m.timestamp,m.replyTo, m.filters,
+        sender.email as sender_email,
+        receiver.email as receiver_email
+      FROM ${messagesTableName} m
+      JOIN ${usersTableName} sender ON m.sender_id = sender.id
+      JOIN ${usersTableName} receiver ON m.receiver_id = receiver.id
+      WHERE (m.sender_id = ? OR m.receiver_id = ?)
+      ${listingId ? "AND m.listingId = ?" : ""}
+      ORDER BY m.timestamp ASC`;
 
-    const params = listingId ? [email, email, listingId] : [email, email];
+    const params = listingId ? [userId, userId, listingId] : [userId, userId];
 
-    await db.all(query, params, (err, rows) => {
+    db.all(query, params, (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
       const threads = createThread(rows);
+
       return res.status(200).json(threads);
     });
   } catch (err) {
@@ -161,10 +261,10 @@ router.get("/:route/all-notes", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
-    await ensureTable(db);
+    await ensureTables(db);
     const query = `SELECT m1.*, m2.message as reply_message, m2.timestamp as reply_timestamp, 
-            m2.email as reply_email, m2.id as reply_id FROM ${tableName} m1
-            LEFT JOIN ${tableName} m2 ON m1.id = m2.replyTo
+            m2.email as reply_email, m2.id as reply_id FROM ${messagesTableName} m1
+            LEFT JOIN ${messagesTableName} m2 ON m1.id = m2.replyTo
             ORDER BY m1.timestamp ASC, m2.timestamp ASC`;
     await db.all(query, [], (err, rows) => {
       if (err) {
@@ -179,22 +279,11 @@ router.get("/:route/all-notes", async (req, res) => {
 });
 
 router.post("/:route/admin-message", async (req, res) => {
-  // CORS check
-  // const allowedOrigins = ["https://lowrise.ca", "http://localhost:4000"];
-  // const origin = req.headers.origin;
-
-  // if (!allowedOrigins.includes(origin)) {
-  //   return res.status(403).json({ error: "Origin not allowed" });
-  // }
-
-  // res.header("Access-Control-Allow-Origin", origin);
-  // res.header("Access-Control-Allow-Methods", "POST");
-
-  const { message, receiver, listingId, timestamp, replyTo } = req.body;
-  const email = "milan@homebaba.ca";
+  const { message, receiver_email, listingId, timestamp, replyTo } = req.body;
+  const adminEmail = "milan@homebaba.ca";
   const messageId = `msg_${Date.now()}_${Math.random()
     .toString(36)
-    .substring(2, 11)}`; // Generate unique ID
+    .substring(2, 11)}`;
   const { route } = req.params;
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
@@ -204,17 +293,24 @@ router.post("/:route/admin-message", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
-    await ensureTable(db);
-    const query = `INSERT INTO ${tableName} (id, message, email, listingId, receiver, timestamp, replyTo) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    await ensureTables(db);
+
+    // Ensure both admin and receiver exist and get their IDs
+    const senderId = await ensureUser(db, adminEmail, "Admin");
+    const receiverId = await ensureUser(db, receiver_email);
+
+    const query = `INSERT INTO ${messagesTableName} 
+      (id, message, sender_id, receiver_id, listingId, timestamp, replyTo) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
     db.run(
       query,
       [
         messageId,
         message,
-        email,
+        senderId,
+        receiverId,
         listingId,
-        receiver,
         timestamp,
         replyTo || null,
       ],
@@ -255,15 +351,15 @@ router.delete("/:route/delete-messages", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
-    await ensureTable(db);
+    await ensureTables(db);
     let query, params;
     if (listingId) {
       // Delete messages for specific email and listingId
-      query = `DELETE FROM ${tableName} WHERE (email = ? OR receiver = ?) AND listingId = ?`;
+      query = `DELETE FROM ${messagesTableName} WHERE (email = ? OR receiver = ?) AND listingId = ?`;
       params = [email, email, listingId];
     } else {
       // Delete all messages for email
-      query = `DELETE FROM ${tableName} WHERE email = ? OR receiver = ?`;
+      query = `DELETE FROM ${messagesTableName} WHERE email = ? OR receiver = ?`;
       params = [email, email];
     }
 
@@ -272,6 +368,86 @@ router.delete("/:route/delete-messages", async (req, res) => {
         return res.status(500).json({ error: err.message });
       }
       return res.status(200).json({ message: "Messages deleted successfully" });
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/:route/all-users", async (req, res) => {
+  const { route } = req.params;
+  const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
+  const dbPath = path.resolve(
+    __dirname,
+    `../Data/${databaseDirectoryName}/${dbName}`
+  );
+  const db = new sqlite3.Database(dbPath);
+
+  try {
+    await ensureTables(db);
+    const query = `SELECT * FROM ${usersTableName} 
+                  ORDER BY last_activity DESC NULLS LAST, email ASC`;
+
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      const emails = rows.map((row) => row);
+      return res.status(200).json(emails);
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/:route/add-user", async (req, res) => {
+  const { email, username, phone } = req.body;
+  const { route } = req.params;
+  const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
+  const dbPath = path.resolve(
+    __dirname,
+    `../Data/${databaseDirectoryName}/${dbName}`
+  );
+  const db = new sqlite3.Database(dbPath);
+
+  try {
+    await ensureTables(db);
+
+    // Check if user already exists
+    const existingUser = await new Promise((resolve, reject) => {
+      db.get(
+        `SELECT id FROM ${usersTableName} WHERE email = ?`,
+        [email],
+        (err, row) => {
+          if (err) reject(err);
+          resolve(row);
+        }
+      );
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // Create new user
+    const userId = `user_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 11)}`;
+    await new Promise((resolve, reject) => {
+      db.run(
+        `INSERT INTO ${usersTableName} (id, username, email, phone) VALUES (?, ?, ?, ?)`,
+        [userId, username || email?.split("@")[0] || "", email, phone],
+        (err) => {
+          if (err) reject(err);
+          resolve();
+        }
+      );
+    });
+
+    return res.status(200).json({
+      message: "User created successfully",
+      userId: userId,
+      email: email,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
