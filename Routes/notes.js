@@ -16,7 +16,8 @@ const ensureTables = (db) => {
       email TEXT UNIQUE,
       phone TEXT,
       created_at DATE DEFAULT CURRENT_TIMESTAMP,
-      last_activity DATE
+      last_activity DATE,
+      unread_count INTEGER DEFAULT 0
     )`;
 
     // Create messages table with foreign key to users
@@ -149,15 +150,18 @@ router.post("/:route", async (req, res) => {
     const receiverId = await ensureUser(db, receiver_email);
     // Ensure sender exists and get their ID
     const senderId = await ensureUser(db, sender_email);
+    console.log(sender_email);
+    console.log(senderId);
     // Ensure admin user exists
     const adminId = await ensureUser(db, "milan@homebaba.ca", "Admin");
 
     // Update last_activity for the sender
     await new Promise((resolve, reject) => {
       db.run(
-        `UPDATE ${usersTableName} SET last_activity = CURRENT_TIMESTAMP WHERE id = ?`,
+        `UPDATE ${usersTableName} SET last_activity = CURRENT_TIMESTAMP, unread_count = unread_count + 1 WHERE id = ?`,
         [senderId],
         (err) => {
+          console.log(err);
           if (err) reject(err);
           resolve();
         }
@@ -198,7 +202,8 @@ router.post("/:route", async (req, res) => {
 // Changed from GET to POST for better security with email handling
 router.post("/:route/getmessages", async (req, res) => {
   const { route } = req.params;
-  const { email, listingId } = req.body;
+  const { email, listingId, isAdminDashboard = false, yeta } = req.body;
+  console.log(email, listingId, isAdminDashboard, yeta);
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
     __dirname,
@@ -207,6 +212,23 @@ router.post("/:route/getmessages", async (req, res) => {
   const db = new sqlite3.Database(dbPath);
 
   try {
+    //reset unread count
+    if (isAdminDashboard) {
+      console.log("...");
+      console.log("called");
+      console.log(email);
+      await new Promise((resolve, reject) => {
+        db.run(
+          `UPDATE ${usersTableName} SET unread_count = 0 WHERE email = ?`,
+          [email],
+          (err) => {
+            if (err) reject(err);
+            resolve();
+          }
+        );
+      });
+    }
+
     await ensureTables(db);
 
     // Get user ID first
@@ -385,15 +407,22 @@ router.get("/:route/all-users", async (req, res) => {
 
   try {
     await ensureTables(db);
-    const query = `SELECT * FROM ${usersTableName} 
-                  ORDER BY last_activity DESC NULLS LAST, email ASC`;
+    const query = `
+      SELECT u.*, 
+             (SELECT m.message
+              FROM ${messagesTableName} m 
+              WHERE m.sender_id = u.id 
+              ORDER BY m.timestamp DESC 
+              LIMIT 1) AS last_msg
+      FROM ${usersTableName} u
+      ORDER BY u.last_activity DESC NULLS LAST, u.email ASC`;
 
     db.all(query, [], (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
-      const emails = rows.map((row) => row);
-      return res.status(200).json(emails);
+      const usersWithLastMsg = rows.map((row) => row);
+      return res.status(200).json(usersWithLastMsg);
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
