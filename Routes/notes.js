@@ -17,7 +17,8 @@ const ensureTables = (db) => {
       phone TEXT,
       created_at DATE DEFAULT CURRENT_TIMESTAMP,
       last_activity DATE,
-      unread_count INTEGER DEFAULT 0
+      admin_unread_count INTEGER DEFAULT 0,
+      user_unread_count INTEGER DEFAULT 0
     )`;
 
     // Create messages table with foreign key to users
@@ -123,7 +124,7 @@ const createThread = (rows) => {
   );
 };
 
-// Update the post route to handle the new structure
+// send message route
 router.post("/:route", async (req, res) => {
   const {
     message,
@@ -150,23 +151,35 @@ router.post("/:route", async (req, res) => {
     const receiverId = await ensureUser(db, receiver_email);
     // Ensure sender exists and get their ID
     const senderId = await ensureUser(db, sender_email);
-    console.log(sender_email);
-    console.log(senderId);
+
     // Ensure admin user exists
     const adminId = await ensureUser(db, "milan@homebaba.ca", "Admin");
-
-    // Update last_activity for the sender
-    await new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE ${usersTableName} SET last_activity = CURRENT_TIMESTAMP, unread_count = unread_count + 1 WHERE id = ?`,
-        [senderId],
-        (err) => {
-          console.log(err);
-          if (err) reject(err);
-          resolve();
-        }
-      );
-    });
+    // Update last_activity for the sender and increase unread count
+    if (sender_email !== "milan@homebaba.ca") {
+      await new Promise((resolve, reject) => {
+        db.run(
+          `UPDATE ${usersTableName} SET last_activity = CURRENT_TIMESTAMP, admin_unread_count = admin_unread_count + 1 WHERE id = ?`,
+          [senderId],
+          (err) => {
+            console.log(err);
+            if (err) reject(err);
+            resolve();
+          }
+        );
+      });
+    } else {
+      await new Promise((resolve, reject) => {
+        db.run(
+          `UPDATE ${usersTableName} SET user_unread_count = user_unread_count + 1 WHERE id = ?`,
+          [receiverId],
+          (err, rows) => {
+            console.log(err);
+            if (err) reject(err);
+            resolve();
+          }
+        );
+      });
+    }
 
     const query = `INSERT INTO ${messagesTableName} 
       (id, message, sender_id, receiver_id, listingId, timestamp, replyTo, filters) 
@@ -199,11 +212,10 @@ router.post("/:route", async (req, res) => {
   }
 });
 
-// Changed from GET to POST for better security with email handling
+// route to get messages
 router.post("/:route/getmessages", async (req, res) => {
   const { route } = req.params;
   const { email, listingId, isAdminDashboard = false, yeta } = req.body;
-  console.log(email, listingId, isAdminDashboard, yeta);
   const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
   const dbPath = path.resolve(
     __dirname,
@@ -214,12 +226,21 @@ router.post("/:route/getmessages", async (req, res) => {
   try {
     //reset unread count
     if (isAdminDashboard) {
-      console.log("...");
-      console.log("called");
-      console.log(email);
       await new Promise((resolve, reject) => {
         db.run(
-          `UPDATE ${usersTableName} SET unread_count = 0 WHERE email = ?`,
+          `UPDATE ${usersTableName} SET admin_unread_count = 0 WHERE email = ?`,
+          [email],
+          (err) => {
+            if (err) reject(err);
+            resolve();
+          }
+        );
+      });
+    } else {
+      await new Promise((resolve, reject) => {
+        console.log(`setting 0 for ${email}`);
+        db.run(
+          `UPDATE ${usersTableName} SET user_unread_count = 0 WHERE email = ?`,
           [email],
           (err) => {
             if (err) reject(err);
@@ -247,15 +268,38 @@ router.post("/:route/getmessages", async (req, res) => {
       ORDER BY m.timestamp ASC`;
 
     const params = listingId ? [userId, userId, listingId] : [userId, userId];
-
     db.all(query, params, (err, rows) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
 
       const threads = createThread(rows);
-
       return res.status(200).json(threads);
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/:route/user-unread-count", async (req, res) => {
+  const { route } = req.params;
+  const { receiverEmail } = req.body;
+  const { dbName, databaseDirectoryName } = getDatabaseInfo(route);
+  const dbPath = path.resolve(
+    __dirname,
+    `../Data/${databaseDirectoryName}/${dbName}`
+  );
+  const db = new sqlite3.Database(dbPath);
+  ensureTables(db);
+  const userId = await ensureUser(db, receiverEmail);
+  `SELECT user_unread_count FROM ${usersTableName} WHERE email=${receiverEmail}`;
+  const query = `SELECT user_unread_count FROM ${usersTableName} WHERE email=?`;
+  try {
+    await db.all(query, [receiverEmail], (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      return res.status(200).json(rows);
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
